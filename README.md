@@ -8,6 +8,12 @@ Login to a cloudsim-auth server and get a token
 
 First, make sure you have the [Polymer CLI](https://www.npmjs.com/package/polymer-cli) installed. Then run `polymer serve` to serve your application locally.
 
+## Bower
+
+```
+$ bower install
+```
+
 ## Viewing Your Application
 
 ```
