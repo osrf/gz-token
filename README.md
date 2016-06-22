@@ -1,3 +1,5 @@
+[ ![Codeship Status for osrf/gz-token](https://codeship.com/projects/a4a3e170-1ae3-0134-a64a-265a91e3d879/status?branch=master)](https://codeship.com/projects/159492)
+
 # \<gz-token\>
 
 [documentation](https://osrf.github.io/gz-token/components/gz-token)
