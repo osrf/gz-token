@@ -1,6 +1,8 @@
 # \<gz-token\>
 
-Login cloudsim-auth and get a token
+[documentation](https://osrf.github.io/gz-token/components/gz-token)
+
+Login to a cloudsim-auth server and get a token
 
 ## Install the Polymer-CLI
 
