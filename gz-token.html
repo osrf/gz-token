@@ -147,6 +147,13 @@
             that.fire('login', {user: username, token: token})
           }
         })
+
+        window.addEventListener('register', function(e) {
+          // Login when new account was created successfully
+          if (e.detail.success) {
+            that.tapLogin()
+          }
+        });
       },
       // Triggered when the "config" property is changed
       _configChanged: function(newValue, oldValue) {
