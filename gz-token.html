@@ -31,10 +31,6 @@
       <div><h1>{{title}}</h1></div>
       <div><h4>{{caption}}</h4></div>
 
-      <div id="feedback" style="display:none">
-        <span id="feedback_text"/>
-      </div>
-
       <div>
         Auth server URL:<input id=url value="{{url::input}}"></input>
       </div>
@@ -80,7 +76,6 @@
           window.location = this.url.replace("https://", "https://toto:fakefake@") + "/logout"
           return;
         }
-        this.$.feedback.style.display = 'none'
         this.state = 'Requesting logout'
         this.$.ajax.url = this.url + '/logout'
         this.$.ajax.generateRequest()
@@ -94,16 +89,13 @@
         this.$.ajax.generateRequest()
       },
       hresponse: function(request) {
-        this.$.feedback.style.display = ''
-
         let res = this.$.ajax.lastResponse
 
         if (res.login) {
           const success = res.login == "success" ? true : false
           if (!success)
           {
-            this.$.feedback.style.color = 'red'
-            this.$.feedback_text.textContent = "Fail!"
+            this.fire('notification', {msg: "Something went wrong.", type: "error"})
           }
           else
           {
@@ -115,8 +107,8 @@
               this.set("username", res.user)
             if (res.username)
               this.set("username", res.username)
-            this.$.feedback.style.color = 'blue'
-            this.$.feedback_text.textContent = "User \"" + this.username + "\" logged in!"
+            this.fire('notification',
+                {msg: "User \"" + this.username + "\" logged in.", type: "msg"})
 
             // Set username for refresh
             window.localStorage.setItem("username", this.username);
