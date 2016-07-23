@@ -66,7 +66,11 @@
 
       tapLogin: function() {
         this.state = 'Requesting login'
-        this.$.ajax.url = this.url + '/login'
+        let url = this.url
+        if (!url.endsWith('/'))
+          url += '/'
+        url += 'login'
+        this.$.ajax.url = url
         this.$.ajax.withCredentials = true
         this.$.ajax.generateRequest()
       },
