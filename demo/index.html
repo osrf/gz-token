@@ -14,13 +14,19 @@
     <style is="custom-style" include="demo-pages-shared-styles">
     </style>
   </head>
+  <script>
+    console.log('This is a demo')
+  </script>
   <body>
 
     <div class="vertical-section-container centered">
       <h3>Basic gz-token Demo</h3>
       <demo-snippet>
         <template>
-          <gz-token></gz-token>
+          <gz-token
+            config
+            url="https://107.22.153.254:4000"
+          ></gz-token>
         </template>
       </demo-snippet>
     </div>
