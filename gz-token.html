@@ -32,10 +32,6 @@
       <div><h1>{{title}}</h1></div>
       <div><h4>{{caption}}</h4></div>
 
-      <div id="feedback" style="display:none">
-        <span id="feedback_text"/>
-      </div>
-
       <div>
         Auth server URL:<input id=url value="{{url::input}}"></input>
       </div>
@@ -58,100 +54,103 @@
 
   </template>
 
-  <script>
+  <script src="//cdn.auth0.com/js/lock/10.1.0/lock.min.js"></script>
 
+  <script>
   (function() {
     'use strict';
 
     Polymer({
       is: 'gz-token',
-
       tapLogin: function() {
-        this.state = 'Requesting login'
-        let url = this.url
-        if (!url.endsWith('/'))
-          url += '/'
-        url += 'login'
-        this.$.ajax.url = url
-        this.$.ajax.withCredentials = true
-        this.$.ajax.generateRequest()
+        this.lock.show()
       },
 
       tapLogout: function() {
         // Clear for refresh
         window.localStorage.removeItem("username");
         window.localStorage.removeItem("token");
-
-        if (window.navigator.userAgent.toLowerCase().indexOf("firefox") >= 0)
-        {
-          console.log('firefox')
-          let url = this.url.replace("https://", "https://toto:fakefake@")
-          if (!url.endsWith('/'))
-            url += '/'
-          url += 'logout'
-          window.location = url
-          return;
-        }
-        console.log('chrome logout')
-        this.$.feedback.style.display = 'none'
-        this.state = 'Requesting logout'
-        let url = this.url
-        if (!url.endsWith('/'))
-          url += '/'
-        url += 'logout'
-        this.$.ajax.url = url
-        this.$.ajax.generateRequest()
+        window.localStorage.removeItem("cloudsim_auth0_token");
+        window.location.href = "/"
       },
 
       tapToken: function() {
-        this.state = 'Getting token'
         this.$.ajax.url = this.url + '/token'
         this.$.ajax.params = JSON.parse(this.data)
         this.$.ajax.withCredentials = true
         this.$.ajax.generateRequest()
       },
       hresponse: function(request) {
-        this.$.feedback.style.display = ''
-
         let res = this.$.ajax.lastResponse
+        const success = res.login == "success" ? true : false
+        if (res.success)
+        {
+          this.token = res.token
+          this.username = res.decoded.username
 
-        if (res.login) {
-          const success = res.login == "success" ? true : false
-          if (!success)
-          {
-            this.$.feedback.style.color = 'red'
-            this.$.feedback_text.textContent = "Fail!"
-          }
-          else
-          {
-            this.token = res.token
+          // Set username for refresh
+          window.localStorage.setItem("username", this.username);
+          window.localStorage.setItem("token", this.token);
 
-            // temporary fix for older auth server that returns user instead
-            // of username
-            if (res.user)
-              this.set("username", res.user)
-            if (res.username)
-              this.set("username", res.username)
-            this.$.feedback.style.color = 'blue'
-            this.$.feedback_text.textContent = "User \"" + this.username + "\" logged in!"
-
-            // Set username for refresh
-            window.localStorage.setItem("username", this.username);
-            window.localStorage.setItem("token", this.token);
-
-            this.fire('login', {user: this.username, token: this.token})
-          }
+          this.fire('login', {user: this.username, token: this.token})
         }
-
-        // Fill state
-        console.log(request.detail.response)
       },
       herror: function(err) {
-        this.fire('logout')
+        console.error(err)
+      },
+      _requestLogin: function(profile, auth0_token) {
+        // Request cloudsim-auth token
+        let url = this.url
+        if (!url.endsWith('/'))
+          url += '/'
+        url += 'token'
+        this.$.ajax.url = url + '?username=' + profile.email
+
+        this.$.ajax.headers.authorization = 'Bearer ' + auth0_token
+        this.$.ajax.withCredentials = true
+        this.$.ajax.generateRequest()
       },
       attached: function() {
-        console.log('gz-token widget attached!')
         const that = this
+
+        const auth0_token_item = 'cloudsim_auth0_token';
+
+        const auth0_id = getConfig().auth0_id
+        const auth0_domain = getConfig().auth0_domain
+
+        this.lock = new Auth0Lock(auth0_id, auth0_domain);
+
+        // This is called after page refresh due to redirect
+        this.lock.on("authenticated", function(authResult) {
+          // Set local storage so user is still logged in on refresh
+          localStorage.setItem(auth0_token_item, authResult.idToken);
+
+          // Login with cloudsim-auth
+          that.lock.getProfile(authResult.idToken, function (err, profile) {
+            if (err) {
+              console.error('There was an error getting the profile: ' +
+                  err.message);
+              return;
+            }
+
+            that._requestLogin(profile, authResult.idToken)
+          });
+        });
+
+        // When refreshing the page, check if user was already logged in
+        var auth0_token = localStorage.getItem(auth0_token_item);
+        if (auth0_token) {
+          this.lock.getProfile(auth0_token, function (err, profile) {
+            if (err) {
+              console.error('There was an error getting the profile: ' +
+                  err.message);
+              return;
+            }
+
+            that._requestLogin(profile, auth0_token)
+          });
+        }
+
         // attached happens before the webcomponentsready event, so
         // its a good time to set a listener for it here
         window.addEventListener('WebComponentsReady', function() {
@@ -171,6 +170,8 @@
             that.tapLogin()
           }
         });
+
+        console.log('gz-token widget attached!')
       },
       properties: {
         // the title above the widget
