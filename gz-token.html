@@ -6,7 +6,6 @@
     <style>
       #config {
         max-width: 30em;
-        border: 1px solid black;
         padding: 1em;
       }
 
@@ -41,12 +40,19 @@
         Auth0 Domain:<input value="{{auth0_domain::input}}"></input>
       </div>
       <div>
-        Token: [[token]]
+        Username: [[username]]
+      </div>
+      <div>
+        Auth0 token: [[auth0_token]]
+      </div>
+      <div>
+        Cloudsim-auth token: [[token]]
       </div>
 
       <div>
         <button on-tap="tapLogin">Login</button>
         <button on-tap="tapLogout">Logout</button>
+        <button on-tap="tapToken">Token</button>
       </div>
 
     </div>
@@ -93,6 +99,11 @@
         console.log('gz-token widget attached!')
       },
 
+      /// Request cloudsim-auth token. This needs Auth0 to be logged in.
+      tapToken: function() {
+        this._requestLogin();
+      },
+
       /// Request login
       tapLogin: function() {
         if (!this.lock)
@@ -109,6 +120,14 @@
         window.localStorage.removeItem(this.username_item);
         window.localStorage.removeItem(this.token_item);
         window.localStorage.removeItem(this.auth0_token_item);
+
+        window.localStorage.removeItem('gztoken_url');
+        window.localStorage.removeItem('gztoken_auth0_id');
+        window.localStorage.removeItem('gztoken_auth0_domain');
+
+        this.auth0_token = ''
+        this.username = ''
+        this.token = ''
 
         // Redirect to main page
         window.location.href = "/"
@@ -136,15 +155,20 @@
         console.error(err)
       },
 
-      /// Internal function to send login ajax request.
-      _requestLogin: function(profile, auth0_token) {
+      /// Internal function to request token from cloudsim-auth.
+      _requestLogin: function() {
+        if (this.username === '' || this.auth0_token === '')
+        {
+          console.error('Missing some fields, have you logged in yet?')
+          return;
+        }
         let url = this.url
         if (!url.endsWith('/'))
           url += '/'
         url += 'token'
-        this.$.ajax.url = url + '?username=' + profile.email
+        this.$.ajax.url = url + '?username=' + this.username
 
-        this.$.ajax.headers.authorization = 'Bearer ' + auth0_token
+        this.$.ajax.headers.authorization = 'Bearer ' + this.auth0_token
         this.$.ajax.withCredentials = true
         this.$.ajax.generateRequest()
       },
@@ -161,12 +185,26 @@
 
       /// Start Auth0's lock
       _createLock: function() {
-        if (this.auth0_id == 'not set' ||
-            this.auth0_domain == 'not set' ||
+
+        // These are needed for the demo to work
+        if (localStorage.getItem('gztoken_url'))
+          this.url = localStorage.getItem('gztoken_url');
+        if (localStorage.getItem('gztoken_auth0_id'))
+          this.auth0_id = localStorage.getItem('gztoken_auth0_id');
+        if (localStorage.getItem('gztoken_auth0_domain'))
+          this.auth0_domain = localStorage.getItem('gztoken_auth0_domain');
+
+        if (this.auth0_id == '' ||
+            this.auth0_domain == '' ||
             this.lock != undefined)
         {
           return;
         }
+
+        // These are needed for the demo to work
+        localStorage.setItem('gztoken_url', this.url);
+        localStorage.setItem('gztoken_auth0_id', this.auth0_id);
+        localStorage.setItem('gztoken_auth0_domain', this.auth0_domain);
 
         this.lock = new Auth0Lock(this.auth0_id, this.auth0_domain);
 
@@ -174,8 +212,10 @@
         const that = this;
         this.lock.on("authenticated", function(authResult) {
 
+          that.auth0_token = authResult.idToken
+
           // Set local storage so user is still logged in on refresh
-          localStorage.setItem(that.auth0_token_item, authResult.idToken);
+          localStorage.setItem(that.auth0_token_item, that.auth0_token);
 
           // Login with cloudsim-auth
           that.lock.getProfile(authResult.idToken, function (err, profile) {
@@ -185,21 +225,25 @@
               return;
             }
 
-            that._requestLogin(profile, authResult.idToken)
+            that.username = profile.email;
+
+            that._requestLogin()
           });
         });
 
         // When refreshing the page, check if user was already logged in
-        var auth0_token = localStorage.getItem(this.auth0_token_item);
-        if (auth0_token) {
-          this.lock.getProfile(auth0_token, function (err, profile) {
+        this.auth0_token = localStorage.getItem(this.auth0_token_item);
+        if (this.auth0_token) {
+          this.lock.getProfile(this.auth0_token, function (err, profile) {
             if (err) {
               console.error('There was an error getting the profile: ' +
                   err.message);
               return;
             }
 
-            that._requestLogin(profile, auth0_token)
+            that.username = profile.email;
+
+            that._requestLogin()
           });
         }
 
@@ -231,14 +275,28 @@
         /// Name of user logged in.
         username: {
           type: String,
-          value: 'not set',
+          value: '',
           notify: true
         },
 
-        /// Authentication server token for user logged in.
+        /// Cloudsim-auth token for user logged in.
         token: {
           type: String,
-          value: 'not set',
+          value: '',
+          notify: true
+        },
+
+        /// Username of user logged in.
+        username: {
+          type: String,
+          value: '',
+          notify: true
+        },
+
+        /// Auth0 token for user logged in.
+        auth0_token: {
+          type: String,
+          value: '',
           notify: true
         },
 
@@ -266,7 +324,7 @@
         /// Auth0 ID
         auth0_id: {
           type: String,
-          value: 'not set',
+          value: '',
           notify: true,
           observer: '_onAuth0IdChanged'
         },
@@ -274,7 +332,7 @@
         /// Auth0 domain
         auth0_domain: {
           type: String,
-          value: 'not set',
+          value: '',
           notify: true,
           observer: '_onAuth0DomainChanged'
         },
