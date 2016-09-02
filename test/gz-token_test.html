@@ -11,7 +11,6 @@
     <link rel="import" href="../gz-token.html">
   </head>
   <body>
-
     <test-fixture id="basic">
       <template>
         <gz-token url="/responds_to_login"></gz-token>
@@ -20,52 +19,11 @@
 
     <script>
       suite('<gz-token>', function() {
-        var responseHeaders = {
-          json: { 'Content-Type': 'application/json' },
-          plain: { 'Content-Type': 'text/plain' }
-        };
-        var request;
-        var server;
-
         setup(function() {
 
-          // Fake server to send responses
-          server = sinon.fakeServer.create();
-          server.respondImmediately = true;
-          server.autoRespond = true;
-          server.respondWith(
-            'GET',
-            /\/responds_to_login.*/,
-            [
-              200,
-              responseHeaders.json,
-              '{"login":"success", "username":"name-of-logged-user"}'
-            ]
-          );
-
-          token = fixture('basic');
-          assert.notStrictEqual(token, undefined);
-        });
-
-        // Pass function(done) so the test waits for done()
-        test('Trigger login and check username is changed and login event fired', function(done) {
-
-          // Check variables
-          assert.equal(token.url, "/responds_to_login");
-          assert.equal(token.username, "placeholder");
-
-          // Trigger login request
-          token.tapLogin();
-
-          // Fake server responds
-          server.respond();
-
-          // Listen to login event
-          token.addEventListener("login", function(e) {
-            assert.equal(e.detail.user, "name-of-logged-user");
-            assert.equal(token.username, "name-of-logged-user");
-            done();
-          });
+          component = fixture('basic');
+          assert.notStrictEqual(component, undefined);
+          component.attached();
         });
       });
     </script>

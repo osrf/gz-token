@@ -6,7 +6,6 @@
     <style>
       #config {
         max-width: 30em;
-        border: 1px solid black;
         padding: 1em;
       }
 
@@ -22,145 +21,70 @@
       id='ajax'
       url=''
       handle-as='json'
-      on-response='hresponse'
-      on-error="herror"
+      on-response='_onAjaxResponse'
+      on-error="_onAjaxError"
       debounce-duration='300'>
     </iron-ajax>
 
     <div id="config"  hidden$=[[!config]]>
 
-      <div><h1>{{title}}</h1></div>
-      <div><h4>{{caption}}</h4></div>
-
-      <div id="feedback" style="display:none">
-        <span id="feedback_text"/>
-      </div>
+      <div><h1>[[title]]</h1></div>
 
       <div>
-        Auth server URL:<input id=url value="{{url::input}}"></input>
+        Auth server URL:<input value="{{url::input}}"></input>
       </div>
       <div>
-        Data (JSON):<input id=data value="{{data::input}}"></input>
+        Auth0 ID:<input value="{{auth0_id::input}}"></input>
       </div>
       <div>
-        <button on-tap="tapToken" id="buttonToken">token</button>
+        Auth0 Domain:<input value="{{auth0_domain::input}}"></input>
       </div>
       <div>
-        Token: {{token}}
+        Username: [[username]]
+      </div>
+      <div>
+        Auth0 token: [[auth0_token]]
+      </div>
+      <div>
+        Cloudsim-auth token: [[token]]
       </div>
 
       <div>
-        <button on-tap="tapLogin" id="buttonLogin">login</button>
-        <button on-tap="tapLogout" id="buttonLogout">logout</button>
+        <button on-tap="tapLogin">Login</button>
+        <button on-tap="tapLogout">Logout</button>
+        <button on-tap="tapToken">Token</button>
       </div>
 
     </div>
 
   </template>
 
-  <script>
+  <!-- AUTH0 -->
+  <script src="//cdn.auth0.com/js/lock/10.1.0/lock.min.js"></script>
 
+  <script>
   (function() {
     'use strict';
 
     Polymer({
       is: 'gz-token',
 
-      tapLogin: function() {
-        this.state = 'Requesting login'
-        let url = this.url
-        if (!url.endsWith('/'))
-          url += '/'
-        url += 'login'
-        this.$.ajax.url = url
-        this.$.ajax.withCredentials = true
-        this.$.ajax.generateRequest()
-      },
-
-      tapLogout: function() {
-        // Clear for refresh
-        window.localStorage.removeItem("username");
-        window.localStorage.removeItem("token");
-
-        if (window.navigator.userAgent.toLowerCase().indexOf("firefox") >= 0)
-        {
-          console.log('firefox')
-          let url = this.url.replace("https://", "https://toto:fakefake@")
-          if (!url.endsWith('/'))
-            url += '/'
-          url += 'logout'
-          window.location = url
-          return;
-        }
-        console.log('chrome logout')
-        this.$.feedback.style.display = 'none'
-        this.state = 'Requesting logout'
-        let url = this.url
-        if (!url.endsWith('/'))
-          url += '/'
-        url += 'logout'
-        this.$.ajax.url = url
-        this.$.ajax.generateRequest()
-      },
-
-      tapToken: function() {
-        this.state = 'Getting token'
-        this.$.ajax.url = this.url + '/token'
-        this.$.ajax.params = JSON.parse(this.data)
-        this.$.ajax.withCredentials = true
-        this.$.ajax.generateRequest()
-      },
-      hresponse: function(request) {
-        this.$.feedback.style.display = ''
-
-        let res = this.$.ajax.lastResponse
-
-        if (res.login) {
-          const success = res.login == "success" ? true : false
-          if (!success)
-          {
-            this.$.feedback.style.color = 'red'
-            this.$.feedback_text.textContent = "Fail!"
-          }
-          else
-          {
-            this.token = res.token
-
-            // temporary fix for older auth server that returns user instead
-            // of username
-            if (res.user)
-              this.set("username", res.user)
-            if (res.username)
-              this.set("username", res.username)
-            this.$.feedback.style.color = 'blue'
-            this.$.feedback_text.textContent = "User \"" + this.username + "\" logged in!"
-
-            // Set username for refresh
-            window.localStorage.setItem("username", this.username);
-            window.localStorage.setItem("token", this.token);
-
-            this.fire('login', {user: this.username, token: this.token})
-          }
-        }
-
-        // Fill state
-        console.log(request.detail.response)
-      },
-      herror: function(err) {
-        this.fire('logout')
-      },
+      /// Called when widget is attached.
       attached: function() {
-        console.log('gz-token widget attached!')
+        this._createLock();
+
         const that = this
         // attached happens before the webcomponentsready event, so
         // its a good time to set a listener for it here
         window.addEventListener('WebComponentsReady', function() {
           // allow token aware components to react to login, if
           // the user is logged in but the page is reloading
-          if (window.localStorage.getItem("username") != null &&
-              window.localStorage.getItem("token") != null) {
-            const username = window.localStorage.getItem("username")
-            const token = window.localStorage.getItem("token")
+          if (window.localStorage.getItem(that.username_item) != null &&
+              window.localStorage.getItem(that.token_item) != null)
+          {
+            const username = window.localStorage.getItem(that.username_item)
+            const token = window.localStorage.getItem(that.token_item)
+
             that.fire('login', {user: username, token: token})
           }
         })
@@ -171,43 +95,246 @@
             that.tapLogin()
           }
         });
+
+        console.log('gz-token widget attached!')
       },
+
+      /// Request cloudsim-auth token. This needs Auth0 to be logged in.
+      tapToken: function() {
+        this._requestLogin();
+      },
+
+      /// Request login
+      tapLogin: function() {
+        if (!this.lock)
+        {
+          console.error('It\'s not possible to use Auth0, have you set the required fields?')
+          return;
+        }
+        this.lock.show()
+      },
+
+      /// Request logout
+      tapLogout: function() {
+        // Clear local storage
+        window.localStorage.removeItem(this.username_item);
+        window.localStorage.removeItem(this.token_item);
+        window.localStorage.removeItem(this.auth0_token_item);
+
+        window.localStorage.removeItem('gztoken_url');
+        window.localStorage.removeItem('gztoken_auth0_id');
+        window.localStorage.removeItem('gztoken_auth0_domain');
+
+        this.auth0_token = ''
+        this.username = ''
+        this.token = ''
+
+        // Redirect to main page
+        window.location.href = "/"
+      },
+
+      /// Callback when ajax gets a response.
+      _onAjaxResponse: function(request) {
+        let res = this.$.ajax.lastResponse
+        const success = res.login == "success" ? true : false
+        if (res.success)
+        {
+          this.token = res.token
+          this.username = res.decoded.username
+
+          // Set username for refresh
+          window.localStorage.setItem(this.username_item, this.username);
+          window.localStorage.setItem(this.token_item, this.token);
+
+          this.fire('login', {user: this.username, token: this.token})
+        }
+      },
+
+      /// Callback when ajax gets an error.
+      _onAjaxError: function(err) {
+        console.error(err)
+      },
+
+      /// Internal function to request token from cloudsim-auth.
+      _requestLogin: function() {
+        if (this.username === '' || this.auth0_token === '')
+        {
+          console.error('Missing some fields, have you logged in yet?')
+          return;
+        }
+        let url = this.url
+        if (!url.endsWith('/'))
+          url += '/'
+        url += 'token'
+        this.$.ajax.url = url + '?username=' + this.username
+
+        this.$.ajax.headers.authorization = 'Bearer ' + this.auth0_token
+        this.$.ajax.withCredentials = true
+        this.$.ajax.generateRequest()
+      },
+
+      /// Callback when auth0_id is changed
+      _onAuth0IdChanged: function() {
+        this._createLock();
+      },
+
+      /// Callback when auth0_id is changed
+      _onAuth0DomainChanged: function() {
+        this._createLock();
+      },
+
+      /// Start Auth0's lock
+      _createLock: function() {
+
+        // These are needed for the demo to work
+        if (localStorage.getItem('gztoken_url'))
+          this.url = localStorage.getItem('gztoken_url');
+        if (localStorage.getItem('gztoken_auth0_id'))
+          this.auth0_id = localStorage.getItem('gztoken_auth0_id');
+        if (localStorage.getItem('gztoken_auth0_domain'))
+          this.auth0_domain = localStorage.getItem('gztoken_auth0_domain');
+
+        if (this.auth0_id == '' ||
+            this.auth0_domain == '' ||
+            this.lock != undefined)
+        {
+          return;
+        }
+
+        // These are needed for the demo to work
+        localStorage.setItem('gztoken_url', this.url);
+        localStorage.setItem('gztoken_auth0_id', this.auth0_id);
+        localStorage.setItem('gztoken_auth0_domain', this.auth0_domain);
+
+        this.lock = new Auth0Lock(this.auth0_id, this.auth0_domain);
+
+        // This is called after page refresh due to redirect
+        const that = this;
+        this.lock.on("authenticated", function(authResult) {
+
+          that.auth0_token = authResult.idToken
+
+          // Set local storage so user is still logged in on refresh
+          localStorage.setItem(that.auth0_token_item, that.auth0_token);
+
+          // Login with cloudsim-auth
+          that.lock.getProfile(authResult.idToken, function (err, profile) {
+            if (err) {
+              console.error('There was an error getting the profile: ' +
+                  err.message);
+              return;
+            }
+
+            that.username = profile.email;
+
+            that._requestLogin()
+          });
+        });
+
+        // When refreshing the page, check if user was already logged in
+        this.auth0_token = localStorage.getItem(this.auth0_token_item);
+        if (this.auth0_token) {
+          this.lock.getProfile(this.auth0_token, function (err, profile) {
+            if (err) {
+              console.error('There was an error getting the profile: ' +
+                  err.message);
+              return;
+            }
+
+            that.username = profile.email;
+
+            that._requestLogin()
+          });
+        }
+
+      },
+
+      /// Component properties
       properties: {
-        // the title above the widget
+
+        /// The title above the widget
         title: {
           type: String,
           value: 'Log into existing account (gz-token)',
           notify: true
         },
-        // the caption under the title
-        caption: {
-          type: String,
-          value: 'This widget allows the user to log into the system and get identity tokens from the cloudsim-auth server. These tokens are required when performing requests to cloudsim-portal and cloudsim-sim servers. A popup will show up to input username and password.',
-          notify: true
-        },
-        data: {
-          type: String,
-          value: '{"role":"sim_runner"}',
-          notify: true
-        },
+
+        /// Authentication server URL
         url: {
           type: String,
           value: 'https://localhost:5050',
           notify: true
         },
+
+        /// True to show configuration GUI
         config: {
           type: Boolean,
           value: false,
         },
+
+        /// Name of user logged in.
         username: {
           type: String,
-          value: 'placeholder',
+          value: '',
           notify: true
         },
+
+        /// Cloudsim-auth token for user logged in.
         token: {
           type: String,
           value: '',
           notify: true
+        },
+
+        /// Username of user logged in.
+        username: {
+          type: String,
+          value: '',
+          notify: true
+        },
+
+        /// Auth0 token for user logged in.
+        auth0_token: {
+          type: String,
+          value: '',
+          notify: true
+        },
+
+        /// Name of item in localStorage which keeps auth0's token.
+        auth0_token_item: {
+          type: String,
+          value: 'cloudsim_auth0_token',
+          readonly: true
+        },
+
+        /// Name of item in localStorage which keeps username.
+        username_item: {
+          type: String,
+          value: 'cloudsim_username',
+          readonly: true
+        },
+
+        /// Name of item in localStorage which keeps cloudsim's token.
+        token_item: {
+          type: String,
+          value: 'cloudsim_token',
+          readonly: true
+        },
+
+        /// Auth0 ID
+        auth0_id: {
+          type: String,
+          value: '',
+          notify: true,
+          observer: '_onAuth0IdChanged'
+        },
+
+        /// Auth0 domain
+        auth0_domain: {
+          type: String,
+          value: '',
+          notify: true,
+          observer: '_onAuth0DomainChanged'
         },
       }
     })
