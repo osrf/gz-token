@@ -35,6 +35,12 @@
         Auth server URL:<input value="{{url::input}}"></input>
       </div>
       <div>
+        Auth0 ID:<input value="{{auth0_id::input}}"></input>
+      </div>
+      <div>
+        Auth0 Domain:<input value="{{auth0_domain::input}}"></input>
+      </div>
+      <div>
         Token: [[token]]
       </div>
 
@@ -59,45 +65,9 @@
 
       /// Called when widget is attached.
       attached: function() {
+        this._createLock();
+
         const that = this
-
-        const auth0_id = getConfig().auth0_id
-        const auth0_domain = getConfig().auth0_domain
-
-        this.lock = new Auth0Lock(auth0_id, auth0_domain);
-
-        // This is called after page refresh due to redirect
-        this.lock.on("authenticated", function(authResult) {
-
-          // Set local storage so user is still logged in on refresh
-          localStorage.setItem(that.auth0_token_item, authResult.idToken);
-
-          // Login with cloudsim-auth
-          that.lock.getProfile(authResult.idToken, function (err, profile) {
-            if (err) {
-              console.error('There was an error getting the profile: ' +
-                  err.message);
-              return;
-            }
-
-            that._requestLogin(profile, authResult.idToken)
-          });
-        });
-
-        // When refreshing the page, check if user was already logged in
-        var auth0_token = localStorage.getItem(this.auth0_token_item);
-        if (auth0_token) {
-          this.lock.getProfile(auth0_token, function (err, profile) {
-            if (err) {
-              console.error('There was an error getting the profile: ' +
-                  err.message);
-              return;
-            }
-
-            that._requestLogin(profile, auth0_token)
-          });
-        }
-
         // attached happens before the webcomponentsready event, so
         // its a good time to set a listener for it here
         window.addEventListener('WebComponentsReady', function() {
@@ -125,6 +95,11 @@
 
       /// Request login
       tapLogin: function() {
+        if (!this.lock)
+        {
+          console.error('It\'s not possible to use Auth0, have you set the required fields?')
+          return;
+        }
         this.lock.show()
       },
 
@@ -173,6 +148,64 @@
         this.$.ajax.withCredentials = true
         this.$.ajax.generateRequest()
       },
+
+      /// Callback when auth0_id is changed
+      _onAuth0IdChanged: function() {
+        this._createLock();
+      },
+
+      /// Callback when auth0_id is changed
+      _onAuth0DomainChanged: function() {
+        this._createLock();
+      },
+
+      /// Start Auth0's lock
+      _createLock: function() {
+        if (this.auth0_id == 'not set' ||
+            this.auth0_domain == 'not set' ||
+            this.lock != undefined)
+        {
+          return;
+        }
+
+        this.lock = new Auth0Lock(this.auth0_id, this.auth0_domain);
+
+        // This is called after page refresh due to redirect
+        const that = this;
+        this.lock.on("authenticated", function(authResult) {
+
+          // Set local storage so user is still logged in on refresh
+          localStorage.setItem(that.auth0_token_item, authResult.idToken);
+
+          // Login with cloudsim-auth
+          that.lock.getProfile(authResult.idToken, function (err, profile) {
+            if (err) {
+              console.error('There was an error getting the profile: ' +
+                  err.message);
+              return;
+            }
+
+            that._requestLogin(profile, authResult.idToken)
+          });
+        });
+
+        // When refreshing the page, check if user was already logged in
+        var auth0_token = localStorage.getItem(this.auth0_token_item);
+        if (auth0_token) {
+          this.lock.getProfile(auth0_token, function (err, profile) {
+            if (err) {
+              console.error('There was an error getting the profile: ' +
+                  err.message);
+              return;
+            }
+
+            that._requestLogin(profile, auth0_token)
+          });
+        }
+
+      },
+
+      /// Component properties
       properties: {
 
         /// The title above the widget
@@ -228,6 +261,22 @@
           type: String,
           value: 'cloudsim_token',
           readonly: true
+        },
+
+        /// Auth0 ID
+        auth0_id: {
+          type: String,
+          value: 'not set',
+          notify: true,
+          observer: '_onAuth0IdChanged'
+        },
+
+        /// Auth0 domain
+        auth0_domain: {
+          type: String,
+          value: 'not set',
+          notify: true,
+          observer: '_onAuth0DomainChanged'
         },
       }
     })
