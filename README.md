@@ -2,6 +2,8 @@
 
 [![GitHub version](https://badge.fury.io/gh/osrf%2Fgz-token.svg)](https://badge.fury.io/gh/osrf%2Fgz-token)
 
+[![Dependency Status](https://www.versioneye.com/user/projects/57ca3751939fc600471d507a/badge.svg?style=flat-square)](https://www.versioneye.com/user/projects/57ca3751939fc600471d507a)
+
 # \<gz-token\>
 
 documentation: [https://osrf.github.io/gz-token/components/gz-token](https://osrf.github.io/gz-token/components/gz-token)
