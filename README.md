@@ -1,5 +1,7 @@
 [ ![Codeship Status for osrf/gz-token](https://codeship.com/projects/a4a3e170-1ae3-0134-a64a-265a91e3d879/status?branch=master)](https://codeship.com/projects/159492)
 
+[![GitHub version](https://badge.fury.io/gh/osrf%2Fgz-token.svg)](https://badge.fury.io/gh/osrf%2Fgz-token)
+
 # \<gz-token\>
 
 documentation: [https://osrf.github.io/gz-token/components/gz-token](https://osrf.github.io/gz-token/components/gz-token)
