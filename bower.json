@@ -2,6 +2,7 @@
   "name": "gz-token",
   "description": "Login cloudsim-auth and get a token",
   "main": "gz-token.html",
+  "license": "ISC",
   "dependencies": {
     "polymer": "Polymer/polymer#^1.4.0",
     "iron-ajax": "PolymerElements/iron-ajax#^1.4.3"
