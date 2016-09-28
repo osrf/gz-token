@@ -42,6 +42,11 @@
       <div>
         Username: [[username]]
       </div>
+      <template is="dom-repeat" items="[[identities]]">
+        <div>
+          Identity [[[index]]]: [[item]]
+        </div>
+      </template>
       <div>
         Auth0 token: [[auth0_token]]
       </div>
@@ -79,13 +84,13 @@
         window.addEventListener('WebComponentsReady', function() {
           // allow token aware components to react to login, if
           // the user is logged in but the page is reloading
-          if (window.localStorage.getItem(that.username_item) != null &&
+          if (window.localStorage.getItem(that.identities_item) != null &&
               window.localStorage.getItem(that.token_item) != null)
           {
-            const username = window.localStorage.getItem(that.username_item)
+            const identities = window.localStorage.getItem(that.identities_item)
             const token = window.localStorage.getItem(that.token_item)
 
-            that.fire('login', {user: username, token: token})
+            that.fire('login', {identities: identities, token: token})
           }
         })
 
@@ -117,16 +122,11 @@
       /// Request logout
       tapLogout: function() {
         // Clear local storage
-        window.localStorage.removeItem(this.username_item);
-        window.localStorage.removeItem(this.token_item);
-        window.localStorage.removeItem(this.auth0_token_item);
-
-        window.localStorage.removeItem('gztoken_url');
-        window.localStorage.removeItem('gztoken_auth0_id');
-        window.localStorage.removeItem('gztoken_auth0_domain');
+        window.localStorage.clear();
 
         this.auth0_token = ''
         this.username = ''
+        this.identities = []
         this.token = ''
 
         // Redirect to main page
@@ -141,12 +141,13 @@
         {
           this.token = res.token
           this.username = res.decoded.username
+          this.identities = res.decoded.identities
 
-          // Set username for refresh
-          window.localStorage.setItem(this.username_item, this.username);
+          // Set local storage for refresh
+          window.localStorage.setItem(this.identities_item, this.identities);
           window.localStorage.setItem(this.token_item, this.token);
 
-          this.fire('login', {user: this.username, token: this.token})
+          this.fire('login', {identities: this.identities, token: this.token})
         }
       },
 
@@ -286,10 +287,10 @@
           notify: true
         },
 
-        /// Username of user logged in.
-        username: {
-          type: String,
-          value: '',
+        /// Identities of user logged in.
+        identities: {
+          type: Array,
+          value: [],
           notify: true
         },
 
@@ -307,10 +308,10 @@
           readonly: true
         },
 
-        /// Name of item in localStorage which keeps username.
-        username_item: {
+        /// Name of item in localStorage which keeps identities.
+        identities_item: {
           type: String,
-          value: 'cloudsim_username',
+          value: 'cloudsim_identities',
           readonly: true
         },
 
