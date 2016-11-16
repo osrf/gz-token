@@ -87,7 +87,8 @@
           if (window.localStorage.getItem(that.identities_item) != null &&
               window.localStorage.getItem(that.token_item) != null)
           {
-            const identities = window.localStorage.getItem(that.identities_item)
+            const identities =
+                JSON.parse(window.localStorage.getItem(that.identities_item))
             const token = window.localStorage.getItem(that.token_item)
 
             that.fire('login', {identities: identities, token: token})
@@ -144,7 +145,7 @@
           this.identities = res.decoded.identities
 
           // Set local storage for refresh
-          window.localStorage.setItem(this.identities_item, this.identities);
+          window.localStorage.setItem(this.identities_item, JSON.stringify(this.identities));
           window.localStorage.setItem(this.token_item, this.token);
 
           this.fire('login', {identities: this.identities, token: this.token})
