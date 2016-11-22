@@ -75,7 +75,7 @@
     Polymer({
       is: 'gz-token',
 
-      /// Called when widget is attached.
+      // Called when widget is attached.
       attached: function() {
         this._createLock();
 
@@ -102,26 +102,28 @@
             that.tapLogin()
           }
         });
-
-        console.log('gz-token widget attached!')
       },
 
-      /// Request cloudsim-auth token. This needs Auth0 to be logged in.
+      // Request cloudsim-auth token. This needs Auth0 to be logged in.
       tapToken: function() {
         this._requestLogin();
       },
 
-      /// Request login
+      // Request login
       tapLogin: function() {
         if (!this.lock)
         {
           console.error('It\'s not possible to use Auth0, have you set the required fields?')
           return;
         }
-        this.lock.show()
+        this.lock.show({
+          authParams: {
+            state: window.location.pathname,
+          }
+        })
       },
 
-      /// Request logout
+      // Request logout
       tapLogout: function() {
         // Clear local storage
         window.localStorage.clear();
@@ -135,7 +137,7 @@
         window.location.href = "/"
       },
 
-      /// Callback when ajax gets a response.
+      // Callback when ajax gets a response.
       _onAjaxResponse: function(request) {
         let res = this.$.ajax.lastResponse
         const success = res.login == "success" ? true : false
@@ -153,12 +155,12 @@
         }
       },
 
-      /// Callback when ajax gets an error.
+      // Callback when ajax gets an error.
       _onAjaxError: function(err) {
         console.error(err)
       },
 
-      /// Internal function to request token from cloudsim-auth.
+      // Internal function to request token from cloudsim-auth.
       _requestLogin: function() {
         if (this.username === '' || this.auth0_token === '')
         {
@@ -176,17 +178,17 @@
         this.$.ajax.generateRequest()
       },
 
-      /// Callback when auth0_id is changed
+      // Callback when auth0_id is changed
       _onAuth0IdChanged: function() {
         this._createLock();
       },
 
-      /// Callback when auth0_id is changed
+      // Callback when auth0_id is changed
       _onAuth0DomainChanged: function() {
         this._createLock();
       },
 
-      /// Start Auth0's lock
+      // Start Auth0's lock
       _createLock: function() {
 
         // These are needed for the demo to work
@@ -252,79 +254,79 @@
 
       },
 
-      /// Component properties
+      // Component properties
       properties: {
 
-        /// The title above the widget
+        // The title above the widget
         title: {
           type: String,
           value: 'Log into existing account (gz-token)',
           notify: true
         },
 
-        /// Authentication server URL
+        // Authentication server URL
         url: {
           type: String,
           value: 'https://localhost:5050',
           notify: true
         },
 
-        /// True to show configuration GUI
+        // True to show configuration GUI
         config: {
           type: Boolean,
           value: false,
         },
 
-        /// Name of user logged in.
+        // Name of user logged in.
         username: {
           type: String,
           value: '',
           notify: true
         },
 
-        /// Cloudsim-auth token for user logged in.
+        // Cloudsim-auth token for user logged in.
         token: {
           type: String,
           value: '',
           notify: true
         },
 
-        /// Identities of user logged in.
+        // Identities of user logged in.
         identities: {
           type: Array,
           value: [],
           notify: true
         },
 
-        /// Auth0 token for user logged in.
+        // Auth0 token for user logged in.
         auth0_token: {
           type: String,
           value: '',
           notify: true
         },
 
-        /// Name of item in localStorage which keeps auth0's token.
+        // Name of item in localStorage which keeps auth0's token.
         auth0_token_item: {
           type: String,
           value: 'cloudsim_auth0_token',
           readonly: true
         },
 
-        /// Name of item in localStorage which keeps identities.
+        // Name of item in localStorage which keeps identities.
         identities_item: {
           type: String,
           value: 'cloudsim_identities',
           readonly: true
         },
 
-        /// Name of item in localStorage which keeps cloudsim's token.
+        // Name of item in localStorage which keeps cloudsim's token.
         token_item: {
           type: String,
           value: 'cloudsim_token',
           readonly: true
         },
 
-        /// Auth0 ID
+        // Auth0 ID
         auth0_id: {
           type: String,
           value: '',
@@ -332,7 +334,7 @@
           observer: '_onAuth0IdChanged'
         },
 
-        /// Auth0 domain
+        // Auth0 domain
         auth0_domain: {
           type: String,
           value: '',
