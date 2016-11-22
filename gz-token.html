@@ -23,31 +23,36 @@
       <div>
         <input value="{{url::input}}" placeholder="url">
         </input>
-        devauth.cloudsim.io
+        <br>devauth.cloudsim.io
       </div>
       <div>
         <input value="{{auth0_id::input}}" placeholder="auth0_id">
         </input>
-        iaoFZw2aW6q8i8VmZCOCtAFSKBqb3ham
+        <br>iaoFZw2aW6q8i8VmZCOCtAFSKBqb3ham
       </div>
       <div>
         <input value="{{auth0_domain::input}}" placeholder="auth0_domain">
         </input>
-        osrf.auth0.com
+        <br>osrf.auth0.com
       </div>
+      <hr>
       <div>
-        Username: [[username]]
+        username: [[username]]
       </div>
+      <hr>
+      Token identities:
       <template is="dom-repeat" items="[[identities]]">
         <div>
           Identity [[[index]]]: [[item]]
         </div>
       </template>
+      <hr>
       <div>
-        Auth0 token: [[auth0_token]]
+        auth0_token: [[auth0_token]]
       </div>
+      <hr>
       <div>
-        Cloudsim-auth token: [[token]]
+        token (from cloudsim-auth): [[token]]
       </div>
 
       <div>
