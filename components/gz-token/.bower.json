@@ -1,0 +1,27 @@
+{
+  "name": "gz-token",
+  "description": "Login cloudsim-auth and get a token",
+  "main": "gz-token.html",
+  "license": "ISC",
+  "dependencies": {
+    "polymer": "Polymer/polymer#^1.4.0",
+    "iron-ajax": "PolymerElements/iron-ajax#^1.4.3"
+  },
+  "devDependencies": {
+    "iron-component-page": "PolymerElements/iron-component-page#^1.0.0",
+    "iron-demo-helpers": "PolymerElements/iron-demo-helpers#^1.0.0",
+    "web-component-tester": "^4.0.0",
+    "webcomponentsjs": "webcomponents/webcomponentsjs#^0.7.0"
+  },
+  "homepage": "https://github.com/osrf/gz-token",
+  "_release": "22878add55",
+  "_resolution": {
+    "type": "branch",
+    "branch": "master",
+    "commit": "22878add551cbfb0c5dc6690f3ce89cb9cddfbd2"
+  },
+  "_source": "git://github.com/osrf/gz-token.git",
+  "_target": "master",
+  "_originalSource": "osrf/gz-token",
+  "_direct": true
+}
