@@ -86,13 +86,16 @@
           // allow token aware components to react to login, if
           // the user is logged in but the page is reloading
           if (window.localStorage.getItem(that.identities_item) != null &&
-              window.localStorage.getItem(that.token_item) != null)
+              window.localStorage.getItem(that.token_item) != null &&
+              window.localStorage.getItem(that.profile_item) != null)
           {
             const identities =
                 JSON.parse(window.localStorage.getItem(that.identities_item))
             const token = window.localStorage.getItem(that.token_item)
+            const profile =
+                JSON.parse(window.localStorage.getItem(that.profile_item))
             that.token = token
-            that.fire('login', {identities: identities, token: token})
+            that.fire('login', {identities: identities, token: token, profile: profile})
           }
         })
 
@@ -150,8 +153,9 @@
           // Set local storage for refresh
           window.localStorage.setItem(this.identities_item, JSON.stringify(this.identities));
           window.localStorage.setItem(this.token_item, this.token);
+          window.localStorage.setItem(this.profile_item, JSON.stringify(this.profile));
 
-          this.fire('login', {identities: this.identities, token: this.token})
+          this.fire('login', {identities: this.identities, token: this.token, profile: this.profile})
         }
       },
 
@@ -231,6 +235,7 @@
             }
 
             that.username = profile.email;
+            that.profile = profile;
 
             that._requestLogin()
           });
@@ -247,6 +252,7 @@
             }
 
             that.username = profile.email;
+            that.profile = profile;
 
             that._requestLogin()
           });
@@ -282,6 +288,12 @@
           type: String,
           value: '',
           notify: true
+        },
+
+        // Normalized profile from Auth0.
+        profile: {
+          type: Object,
+          value: {}
         },
 
         // Cloudsim-auth token for user logged in.
@@ -323,6 +335,13 @@
         token_item: {
           type: String,
           value: 'cloudsim_token',
+          readonly: true
+        },
+
+        // Name of item in localStorage which keeps auth0's profile.
+        profile_item: {
+          type: String,
+          value: 'cloudsim_profile',
           readonly: true
         },
 
