@@ -87,8 +87,7 @@
           // the user is logged in but the page is reloading
           if (window.localStorage.getItem(that.identities_item) != null &&
               window.localStorage.getItem(that.token_item) != null &&
-              window.localStorage.getItem(that.profile_item) != null)
-          {
+              window.localStorage.getItem(that.profile_item) != null) {
             const identities =
                 JSON.parse(window.localStorage.getItem(that.identities_item))
             const token = window.localStorage.getItem(that.token_item)
