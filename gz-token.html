@@ -174,7 +174,7 @@
         if (!url.endsWith('/'))
           url += '/'
         url += 'token'
-        this.$.ajax.url = url + '?username=' + this.username
+        this.$.ajax.url = url
 
         this.$.ajax.headers.authorization = 'Bearer ' + this.auth0_token
         this.$.ajax.withCredentials = true
