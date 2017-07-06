@@ -214,7 +214,13 @@
         localStorage.setItem('gztoken_auth0_id', this.auth0_id);
         localStorage.setItem('gztoken_auth0_domain', this.auth0_domain);
 
-        this.lock = new Auth0Lock(this.auth0_id, this.auth0_domain);
+        this.lock = new Auth0Lock(this.auth0_id, this.auth0_domain, {
+           auth: {
+            params: {
+              scope: 'openid email'
+            }
+          }
+        })
 
         // This is called after page refresh due to redirect
         const that = this;
